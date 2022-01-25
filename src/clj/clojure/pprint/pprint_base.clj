@@ -191,7 +191,9 @@ Normal library clients should use the standard \"write\" interface. "
         (print "...")
         (do
           (if *current-length* (set! *current-length* (inc *current-length*)))
-          (*print-pprint-dispatch* object))))
+          (try (*print-pprint-dispatch* object)
+               (catch Throwable t
+                 (print (format "<Exception pretty-printing object (%s): %s>" (type object) t)))))))
     length-reached))
 
 (defn write 

@@ -413,3 +413,12 @@ It is implemented with a number of custom enlive templates.\"
 
       "^{:a 1} #{1 4 3 2}\n"
       ^{:a 1} #{1 2 3 4})))
+
+(deftype PprintThrows [])
+(defmethod clojure.pprint/simple-dispatch PprintThrows [obj]
+  (throw (Exception. "I am a bad pprint method")))
+
+(simple-tests pprint-dispatch-exception
+  "{:key\n <Exception pretty-printing object (class clojure.test_clojure.pprint.PprintThrows): java.lang.Exception: I am a bad pprint method>}\n"
+  (with-out-str (pprint {:key (PprintThrows.)}))
+  )
