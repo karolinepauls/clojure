@@ -51,6 +51,11 @@ levels of nesting.",
    :added "1.2"}
  *print-miser-width* 40)
 
+(def ^:dynamic
+  ^{:doc "Pprint recursion limit if *print-pretty* is bound to true",
+    :added "1.12"}
+  *print-depth* 50)
+
 ;;; TODO implement output limiting
 (def ^:dynamic
  ^{:private true,
@@ -97,6 +102,8 @@ radix specifier is in the form #XXr where XX is the decimal value of *print-base
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def  ^:dynamic ^{ :private true } *current-level* 0)
+
+(def ^:dynamic ^{ :private true } *current-depth* 0)
 
 (def ^:dynamic ^{ :private true } *current-length* nil)
 
@@ -184,16 +191,19 @@ Normal library clients should use the standard \"write\" interface. "
   (let [length-reached (and 
                         *current-length*
                         *print-length*
-                        (>= *current-length* *print-length*))]
+                        (>= *current-length* *print-length*))
+        depth-reached (>= *current-depth* *print-depth*)]
     (if-not *print-pretty*
       (pr object)
-      (if length-reached
-        (print "...")
-        (do
-          (if *current-length* (set! *current-length* (inc *current-length*)))
-          (try (*print-pprint-dispatch* object)
-               (catch Throwable t
-                 (print (format "<Exception pretty-printing object (%s): %s>" (type object) t)))))))
+      (cond
+        length-reached (print "...")
+        depth-reached (print "(... depth reached ...)")
+        :else (do
+                (if *current-length* (set! *current-length* (inc *current-length*)))
+                (binding [*current-depth* (inc *current-depth*)]
+                  (try (*print-pprint-dispatch* object)
+                       (catch Throwable t
+                         (print (format "<Exception pretty-printing object (%s): %s>" (type object) t))))))))
     length-reached))
 
 (defn write 
